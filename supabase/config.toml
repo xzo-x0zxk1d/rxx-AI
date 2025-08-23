@@ -1,1 +1,4 @@
 project_id = "fwrolqjgtfrymonjaqgq"
+
+[functions.roblox-ai-chat]
+verify_jwt = false
