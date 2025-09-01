@@ -9,11 +9,7 @@ const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // Optional authentication - users can use the app without signing in
 
   const handleSignOut = async () => {
     await signOut();
@@ -28,9 +24,7 @@ const Index = () => {
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  // Show auth options for non-authenticated users
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
@@ -42,14 +36,24 @@ const Index = () => {
             </h1>
             <p className="text-sm text-muted-foreground">Roblox Development Assistant</p>
           </div>
-          <Button 
-            variant="ghost" 
-            onClick={handleSignOut}
-            className="hover:bg-destructive/10 hover:text-destructive"
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
+          {user ? (
+            <Button 
+              variant="ghost" 
+              onClick={handleSignOut}
+              className="hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/auth')}
+              className="border-primary/20 text-primary hover:bg-primary/10"
+            >
+              Sign In
+            </Button>
+          )}
         </div>
       </header>
       <main className="container mx-auto px-4 py-6">

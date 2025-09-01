@@ -40,6 +40,7 @@ export const RobloxAIChat = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const isAuthenticated = !!user;
 
   useEffect(() => {
     // Auto-scroll to bottom when new messages arrive
@@ -54,7 +55,7 @@ export const RobloxAIChat = () => {
   };
 
   const saveChat = async (chatMessages: Message[], title?: string) => {
-    if (!user || chatMessages.length <= 1) return null; // Don't save if only welcome message
+    if (!isAuthenticated || chatMessages.length <= 1) return null; // Don't save if only welcome message
 
     setIsSaving(true);
     try {
@@ -158,8 +159,8 @@ export const RobloxAIChat = () => {
       const finalMessages = [...newMessages, aiMessage];
       setMessages(finalMessages);
 
-      // Auto-save after AI response
-      if (finalMessages.filter(msg => msg.id !== "welcome").length >= 2) { 
+      // Auto-save after AI response (only if authenticated)
+      if (isAuthenticated && finalMessages.filter(msg => msg.id !== "welcome").length >= 2) { 
         await saveChat(finalMessages);
       }
 
@@ -206,6 +207,15 @@ export const RobloxAIChat = () => {
   };
 
   const handleManualSave = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to save your chats",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (messages.filter(msg => msg.id !== "welcome").length > 0) {
       await saveChat(messages);
       toast({
@@ -217,15 +227,27 @@ export const RobloxAIChat = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100vh-200px)]">
-      <div className="lg:col-span-1">
-        <SavedChats 
-          onSelectChat={loadChat}
-          onNewChat={startNewChat}
-          currentChatId={currentChatId || undefined}
-        />
-      </div>
+      {/* Saved Chats Sidebar - Only show if authenticated */}
+      {isAuthenticated && (
+        <div className="lg:col-span-1">
+          <SavedChats 
+            onSelectChat={loadChat}
+            onNewChat={startNewChat}
+            currentChatId={currentChatId || undefined}
+          />
+        </div>
+      )}
       
-      <div className="lg:col-span-3">
+      <div className={isAuthenticated ? "lg:col-span-3" : "lg:col-span-4"}>
+        {/* Show auth prompt for guest users */}
+        {!isAuthenticated && (
+          <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-red-500/10 border border-primary/20 rounded-lg backdrop-blur-sm">
+            <p className="text-sm text-foreground">
+              💡 <strong>Sign in to save your chats</strong> and access them later. You can continue as a guest, but your conversations won't be saved.
+            </p>
+          </div>
+        )}
+        
         <Card className="h-full flex flex-col bg-card/50 backdrop-blur-sm border-border/50">
           <CardHeader className="flex flex-row items-center space-y-0 pb-2">
             <div className="flex items-center gap-2">
@@ -243,13 +265,14 @@ export const RobloxAIChat = () => {
                   onClick={handleManualSave}
                   disabled={isSaving}
                   className="flex items-center gap-2"
+                  title={!isAuthenticated ? "Sign in to save chats" : "Save chat"}
                 >
                   {isSaving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Save className="h-4 w-4" />
                   )}
-                  Save
+                  {isAuthenticated ? "Save" : "Save (Sign in required)"}
                 </Button>
               )}
               {isLoading && (
